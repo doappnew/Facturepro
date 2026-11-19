@@ -3,7 +3,14 @@ import { formatMoney } from "./calc.js";
 import { getCurrency } from "./currencies.js";
 import type { Business, Client, Invoice } from "./store/types.js";
 
-const money = (minor: number, cur: string) => `${formatMoney(minor, cur)} ${getCurrency(cur).label}`;
+export const money = (minor: number, cur: string) => {
+  let v = formatMoney(minor, cur);
+  if (cur === "PI") { // Pi : zéros inutiles retirés, 2 décimales minimum
+    const [int, frac = ""] = v.split(".");
+    v = `${int}.${frac.replace(/0+$/, "").padEnd(2, "0")}`;
+  }
+  return `${v} ${getCurrency(cur).label}`;
+};
 const qty = (milli: number) => (milli % 1000 === 0 ? String(milli / 1000) : (milli / 1000).toFixed(3).replace(/0+$/, ""));
 
 // PDF simple et lisible. Les montants viennent de la base (calculés par le serveur), jamais du navigateur.
@@ -77,7 +84,7 @@ export function renderInvoicePdf(inv: Invoice, biz: Business, client: Client, pa
     }
     doc.fontSize(7).fillColor("#5B6770").text(
       "Facture créée avec FacturePro, application indépendante, non affiliée à Pi Network. Pi Network is a trademark of PI Community Company.",
-      48, 790, { width: 499, align: "center" },
+      48, 765, { width: 499, align: "center", lineBreak: true },
     );
     doc.end();
   });

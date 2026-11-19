@@ -2,7 +2,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { parseDecimal } from "../calc.js";
 import type {
-  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ShareLink, Store, StoredLine, User,
+  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ShareLink, Store, StoredLine, TestnetKind, TestnetTest, User,
 } from "./types.js";
 
 type Row = Record<string, any>;
@@ -223,5 +223,32 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.db.from("pi_payments").select("amount_pi").eq("invoice_id", invoiceId).eq("status", "completed");
     if (error) fail("sumCompletedPiMinor", error);
     return (data ?? []).reduce((a, r) => a + parseDecimal(amt(r.amount_pi), 7), 0);
+  }
+
+  async claimTestnet(piUid: string, kind: TestnetKind) {
+    const { error } = await this.db.from("testnet_tests").insert({ pi_uid: piUid, kind, status: "started" });
+    if (!error) return true;
+    if (error.code === "23505") { // déjà tenté : on ne rouvre qu'une tentative échouée
+      const { data } = await this.db.from("testnet_tests").update({ status: "started" }).eq("pi_uid", piUid).eq("kind", kind).eq("status", "failed").select();
+      return (data?.length ?? 0) > 0;
+    }
+    fail("claimTestnet", error);
+  }
+  async finishTestnet(piUid: string, kind: TestnetKind, patch: { paymentId?: string | null; txid?: string | null; status: "done" | "failed" }) {
+    const upd: Row = { status: patch.status };
+    if (patch.paymentId) upd.payment_id = patch.paymentId;
+    if (patch.txid) upd.txid = patch.txid;
+    const { error } = await this.db.from("testnet_tests").update(upd).eq("pi_uid", piUid).eq("kind", kind);
+    if (error) fail("finishTestnet", error);
+  }
+  async listTestnet(piUid: string): Promise<TestnetTest[]> {
+    const { data, error } = await this.db.from("testnet_tests").select().eq("pi_uid", piUid);
+    if (error) fail("listTestnet", error);
+    return (data ?? []).map((r) => ({ piUid: r.pi_uid, kind: r.kind, paymentId: r.payment_id, txid: r.txid, status: r.status }));
+  }
+  async countTestnetDone(kind: TestnetKind) {
+    const { count, error } = await this.db.from("testnet_tests").select("*", { count: "exact", head: true }).eq("kind", kind).eq("status", "done");
+    if (error) fail("countTestnetDone", error);
+    return count ?? 0;
   }
 }

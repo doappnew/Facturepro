@@ -5,6 +5,7 @@ import { loadConfig } from "../src/config.js";
 import type { PiPaymentDTO, PiPlatform } from "../src/pi/client.js";
 import { signSession, verifySession } from "../src/session.js";
 import { MemoryStore } from "../src/store/memory.js";
+import { money } from "../src/pdf.js";
 
 const SECRET = "s".repeat(40);
 
@@ -45,6 +46,25 @@ async function web() {
   const client = (await request(s.app).post("/api/clients").set(h).send({ name: "Client SARL", countryCode: "TG" }).expect(201)).body;
   return { ...s, h, client };
 }
+
+describe("PDF", () => {
+  it("montants Pi lisibles : zéros inutiles retirés, 2 décimales minimum", () => {
+    expect(money(150_000_000, "PI")).toBe("15.00 Pi");
+    expect(money(125_000_000, "PI")).toBe("12.50 Pi");
+    expect(money(12_345_678, "PI")).toBe("1.2345678 Pi");
+    expect(money(0, "PI")).toBe("0.00 Pi");
+    expect(money(29500, "XOF")).toBe("29500 FCFA");
+    expect(money(4405, "TND")).toBe("4.405 TND");
+  });
+  it("une facture courte tient sur une seule page", async () => {
+    const { app, h, client } = await web();
+    const id = (await request(app).post("/api/invoices").set(h).send(invoiceBody(client.id))).body.id as string;
+    await request(app).post(`/api/invoices/${id}/issue`).set(h);
+    const pdf = await request(app).get(`/api/invoices/${id}/pdf`).set(h).expect(200);
+    const pages = Buffer.from(pdf.body).toString("latin1").match(/\/Type \/Page\b(?!s)/g) ?? [];
+    expect(pages.length).toBe(1);
+  });
+});
 
 describe("session", () => {
   it("signe, vérifie, expire et refuse une signature modifiée", () => {

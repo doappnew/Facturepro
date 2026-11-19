@@ -10,12 +10,14 @@ import { renderInvoicePdf } from "./pdf.js";
 import { hashToken, newShareToken, signSession, verifySession } from "./session.js";
 import type { Business, DraftInput, Invoice, Store } from "./store/types.js";
 import { paymentsRouter } from "./payments.js";
+import { testnetRouter, type PayoutClient } from "./testnet.js";
 
 export interface ApiDeps {
   config: Config;
   store: Store;
   verifyToken: (accessToken: string) => Promise<PiUser>;
   platform?: PiPlatform;
+  payoutFactory?: () => Promise<PayoutClient>;
   now?: () => Date;
 }
 
@@ -108,6 +110,7 @@ export function publicView(inv: Invoice, biz: Business, clientName: string, paid
     // Les instructions de paiement hors Pi n'existent qu'en mode web (règle Mainnet : transactions en Pi uniquement).
     paymentInstructions: biz.mode === "web" ? biz.paymentInstructions : null,
     client: { name: clientName },
+    payRef: inv.currency === "PI" && inv.kind === "invoice" && PAYABLE.includes(inv.status) ? inv.id : null, // identifiant imprévisible, nécessaire au paiement Pi
     payableInPi: inv.currency === "PI" && inv.kind === "invoice" && PAYABLE.includes(inv.status) && inv.totalMinor > paidMinor,
   };
 }
@@ -148,10 +151,6 @@ export function buildApi(deps: ApiDeps): Router {
     const user = await store.upsertUser(pi.uid, pi.username ?? null);
     res.json({ session: signSession(secret, user.id), user: { username: user.piUsername }, scopes: pi.scopes });
   }));
-
-  r.get("/reference", (_req, res) => {
-    res.json({ countries: COUNTRIES, currencies: [...CURRENCIES, getCurrency("PI")] });
-  });
 
   // --- Pages publiques (lien imprévisible) ---
   const resolveLink = async (token: string) => {
@@ -283,6 +282,10 @@ export function buildApi(deps: ApiDeps): Router {
 
   // --- Paiement Pi (U2A) : session Pi du payeur requise ---
   r.use("/payments", auth, paymentsRouter({ config, store, platform: deps.platform }));
+  // Tests Testnet : routes absentes en Mainnet.
+  if (config.PI_NETWORK === "testnet") {
+    r.use("/testnet", auth, testnetRouter({ config, store, platform: deps.platform, payoutFactory: deps.payoutFactory }));
+  }
 
   return r;
 }

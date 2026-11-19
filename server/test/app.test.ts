@@ -79,6 +79,25 @@ describe("sans base de données", () => {
     expect((await request(app).get("/health")).status).toBe(200);
     expect((await request(app).get("/validation-key.txt")).text).toBe("k");
     expect((await request(app).get("/api/invoices")).status).toBe(503);
+    const ref = (await request(app).get("/api/reference")).body;
+    expect(ref.countries).toHaveLength(22);
+    expect(ref.currencies).toHaveLength(20); // 19 devises + PI
+  });
+});
+
+describe("interface compilée", () => {
+  it("sert index.html sur / et sur /i/:token, mais jamais à la place d'une route API", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dir = mkdtempSync(join(tmpdir(), "fp-"));
+    writeFileSync(join(dir, "index.html"), "<html>FP-INDEX</html>");
+    const app = createApp({ config: cfg(), clientDir: dir });
+    expect((await request(app).get("/")).text).toContain("FP-INDEX");
+    expect((await request(app).get("/i/abc123")).text).toContain("FP-INDEX");
+    expect((await request(app).get("/factures/xyz")).text).toContain("FP-INDEX");
+    expect((await request(app).get("/api/invoices")).text).not.toContain("FP-INDEX");
+    expect((await request(app).get("/health")).body.ok).toBe(true);
   });
 });
 

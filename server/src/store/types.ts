@@ -92,6 +92,9 @@ export interface PiPayment {
   txid: string | null;
 }
 
+export type TestnetKind = "payout" | "receive";
+export interface TestnetTest { piUid: string; kind: TestnetKind; paymentId: string | null; txid: string | null; status: "started" | "done" | "failed" }
+
 export interface Store {
   upsertUser(piUid: string, piUsername: string | null): Promise<User>;
   getUser(id: string): Promise<User | null>;
@@ -122,4 +125,10 @@ export interface Store {
   getPiPayment(piPaymentId: string): Promise<PiPayment | null>;
   updatePiPayment(piPaymentId: string, patch: Partial<Pick<PiPayment, "status" | "txid">>): Promise<PiPayment | null>;
   sumCompletedPiMinor(invoiceId: string): Promise<number>;
+
+  // Tests Testnet exigés par la core team : une seule fois par compte et par type.
+  claimTestnet(piUid: string, kind: TestnetKind): Promise<boolean>; // false si déjà tenté
+  finishTestnet(piUid: string, kind: TestnetKind, patch: { paymentId?: string | null; txid?: string | null; status: "done" | "failed" }): Promise<void>;
+  listTestnet(piUid: string): Promise<TestnetTest[]>;
+  countTestnetDone(kind: TestnetKind): Promise<number>;
 }

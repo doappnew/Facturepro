@@ -10,6 +10,10 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1).optional(),
   SESSION_SECRET: z.string().min(32, "au moins 32 caractères").optional(),
   PUBLIC_BASE_URL: z.string().url().optional(),
+  // Tests Testnet (à 0 par défaut) ; la clé du portefeuille de l'app n'est jamais journalisée et se supprime après les tests.
+  TESTNET_PAYOUT: z.enum(["0", "1"]).default("0"),
+  TESTNET_RECEIVE: z.enum(["0", "1"]).default("0"),
+  PI_WALLET_SEED: z.string().trim().min(1).optional(),
   RENDER_GIT_COMMIT: z.string().optional(),
 });
 

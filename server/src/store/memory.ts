@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { parseDecimal } from "../calc.js";
 import type {
-  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ShareLink, Store, StoredLine, User,
+  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ShareLink, Store, StoredLine, TestnetKind, TestnetTest, User,
 } from "./types.js";
 
 function toLines(input: DraftInput): StoredLine[] {
@@ -127,4 +127,20 @@ export class MemoryStore implements Store {
       .filter((p) => p.invoiceId === invoiceId && p.status === "completed")
       .reduce((a, p) => a + parseDecimal(p.amountPi, 7), 0);
   }
+
+  testnet = new Map<string, TestnetTest>();
+  async claimTestnet(piUid: string, kind: TestnetKind) {
+    const k = `${piUid}|${kind}`;
+    const prev = this.testnet.get(k);
+    if (prev?.status === "failed") { prev.status = "started"; return true; }
+    if (prev) return false;
+    this.testnet.set(k, { piUid, kind, paymentId: null, txid: null, status: "started" });
+    return true;
+  }
+  async finishTestnet(piUid: string, kind: TestnetKind, patch: { paymentId?: string | null; txid?: string | null; status: "done" | "failed" }) {
+    const t = this.testnet.get(`${piUid}|${kind}`);
+    if (t) Object.assign(t, { paymentId: patch.paymentId ?? t.paymentId, txid: patch.txid ?? t.txid, status: patch.status });
+  }
+  async listTestnet(piUid: string) { return [...this.testnet.values()].filter((t) => t.piUid === piUid); }
+  async countTestnetDone(kind: TestnetKind) { return [...this.testnet.values()].filter((t) => t.kind === kind && t.status === "done").length; }
 }
