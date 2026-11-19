@@ -12,8 +12,11 @@ Pi Network is a trademark of PI Community Company.
 ## Déploiement (Render)
 Build : `cd server && npm ci --include=dev && npm run build` — Démarrage : `cd server && npm start` — Variables : voir `.env.example` (saisies dans Render uniquement).
 
+- API (étape 4) : connexion Pi → session signée, profil, clients, factures (brouillon, émission numérotée, annulation), lien de partage + QR, PDF, page publique, paiement Pi U2A (approbation / complétion / paiements incomplets). Mode `pi_only` : facturation en Pi (devise interne `PI`), sans conversion. Mode `web` : devises fiat et instructions de paiement hors Pi (jamais candidat au listing Mainnet).
+- Variables d'environnement : voir `.env.example` (`SESSION_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `PI_API_KEY`, `PI_VALIDATION_KEY`).
+
 ## À venir
-Sessions et utilisateurs en base, API factures, paiements Pi (Testnet puis Mainnet), PDF et QR, interface React.
+Interface React (5 pages du prototype), boutons de test Testnet exigés par la core team (envoi A2U / réception U2A), pages légales, Mainnet.
 
 ## Règles
 Aucun secret dans ce dépôt (voir `.env.example`). Mode `pi_only` seul candidat au listing Mainnet (transactions en Pi uniquement).

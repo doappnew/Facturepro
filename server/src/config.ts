@@ -8,6 +8,8 @@ const schema = z.object({
   PI_API_KEY: z.string().trim().min(1).optional(), // utilisée à l'étape paiements
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1).optional(),
+  SESSION_SECRET: z.string().min(32, "au moins 32 caractères").optional(),
+  PUBLIC_BASE_URL: z.string().url().optional(),
   RENDER_GIT_COMMIT: z.string().optional(),
 });
 

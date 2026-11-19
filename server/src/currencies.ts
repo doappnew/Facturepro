@@ -3,12 +3,12 @@
 
 export interface Currency {
   code: string;
-  decimals: 0 | 2 | 3;
+  decimals: 0 | 2 | 3 | 7;
   name: string;
   label: string;
 }
 
-const c = (code: string, decimals: 0 | 2 | 3, name: string, label = code): Currency => ({
+const c = (code: string, decimals: 0 | 2 | 3 | 7, name: string, label = code): Currency => ({
   code,
   decimals,
   name,
@@ -37,7 +37,11 @@ export const CURRENCIES: readonly Currency[] = [
   c("TND", 3, "Dinar tunisien"),
 ];
 
-const BY_CODE = new Map(CURRENCIES.map((x) => [x.code, x]));
+// Devise interne du mode « Pi uniquement » (hors liste des 19 devises ISO) : le montant de la facture est
+// déjà en Pi, donc aucun taux ni conversion. 7 décimales par prudence (à confirmer en Testnet).
+export const PI_CURRENCY: Currency = c("PI", 7, "Pi", "Pi");
+
+const BY_CODE = new Map([...CURRENCIES, PI_CURRENCY].map((x) => [x.code, x]));
 
 export function getCurrency(code: string): Currency {
   const cur = BY_CODE.get(code);

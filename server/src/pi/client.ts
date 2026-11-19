@@ -60,3 +60,43 @@ export async function verifyAccessToken(accessToken: string, fetchImpl: FetchLik
     clearTimeout(timer);
   }
 }
+
+// ---- Paiements (clé API serveur : « Authorization: Key <clé> ») ----
+export interface PiPaymentDTO {
+  identifier: string;
+  user_uid: string;
+  amount: number;
+  memo: string;
+  metadata: Record<string, unknown> | null;
+  direction: "user_to_app" | "app_to_user";
+  network: "Pi Network" | "Pi Testnet";
+  status: { developer_approved: boolean; transaction_verified: boolean; developer_completed: boolean; cancelled: boolean; user_cancelled: boolean };
+  transaction: null | { txid: string; verified?: boolean };
+}
+
+export interface PiPlatform {
+  getPayment(paymentId: string): Promise<PiPaymentDTO>;
+  approvePayment(paymentId: string): Promise<void>;
+  completePayment(paymentId: string, txid: string): Promise<void>;
+}
+
+export function createPiPlatform(apiKey: string, fetchImpl: FetchLike = fetch as unknown as FetchLike): PiPlatform {
+  const call = async (method: "GET" | "POST", path: string, body?: unknown) => {
+    const res = await (fetchImpl as unknown as (u: string, i: unknown) => ReturnType<FetchLike>)(`${PI_API_BASE}${path}`, {
+      method,
+      headers: { Authorization: `Key ${apiKey}`, "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!res.ok) {
+      // Code d'état et chemin sans identifiant : c'est ce qui permet de diagnostiquer, sans journaliser de clé.
+      console.error(`payments: API Pi ${method} ${path.replace(/\/[^/]+(\/(approve|complete))?$/, "/{id}$1")} ${res.status}`);
+      throw new PiApiError(res.status, `API Pi ${method} ${res.status}`);
+    }
+    return res.json();
+  };
+  return {
+    async getPayment(id) { return (await call("GET", `/payments/${encodeURIComponent(id)}`)) as PiPaymentDTO; },
+    async approvePayment(id) { await call("POST", `/payments/${encodeURIComponent(id)}/approve`); },
+    async completePayment(id, txid) { await call("POST", `/payments/${encodeURIComponent(id)}/complete`, { txid }); },
+  };
+}
