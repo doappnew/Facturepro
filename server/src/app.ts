@@ -10,7 +10,7 @@ import { CURRENCIES, getCurrency } from "./currencies.js";
 import { createPiPlatform, verifyAccessToken, type PiPlatform, type PiUser } from "./pi/client.js";
 import type { Store } from "./store/types.js";
 
-export const APP_VERSION = "0.5.0";
+export const APP_VERSION = "0.5.1";
 
 export interface Deps {
   config: Config;
@@ -33,7 +33,7 @@ export function createApp({ config, store, verifyToken = (t) => verifyAccessToke
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'", "https://sdk.minepi.com"],
-          connectSrc: ["'self'", "https://api.minepi.com", "https://*.minepi.com"],
+          connectSrc: ["'self'", "https://api.minepi.com", "https://*.minepi.com", "https://socialchain.app"],
           frameSrc: ["'self'", "https://*.minepi.com"], // le SDK Pi peut ouvrir ses écrans de paiement
           imgSrc: ["'self'", "data:"],
           frameAncestors: ["*"], // l'app s'ouvre dans Pi Browser

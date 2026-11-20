@@ -36,3 +36,23 @@ export function piPay(
     });
   });
 }
+
+// Informations de diagnostic NON secrètes (aucun jeton, aucune clé).
+export async function piDiagnostics(): Promise<string> {
+  let version = "inconnue";
+  try { const h = await fetch("/health").then((r) => r.json()) as { version?: string; commit?: string | null }; version = `${h.version ?? "?"} (${h.commit ?? "?"})`; } catch { /* hors ligne */ }
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  return [
+    `Origine : ${window.location.origin}`,
+    `SDK Pi présent : ${hasPi() ? "oui" : "non"}`,
+    `Pi Browser : ${/PiBrowser/i.test(ua) ? "oui" : "non détecté"}`,
+    `Version de l'app : ${version}`,
+  ].join("\n");
+}
+
+// Message complet d'une erreur renvoyée par le SDK (peut être une chaîne, un Error ou un objet).
+export function fullError(e: unknown): string {
+  if (e instanceof Error) return `${e.name}: ${e.message}`;
+  if (typeof e === "string") return e;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
