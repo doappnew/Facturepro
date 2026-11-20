@@ -14,7 +14,7 @@ export function Login({ onDone }: { onDone: () => void }) {
   };
   return (
     <main className="app">
-      <div className="brand"><span className="logo">F</span>FacturePro</div>
+      <div className="brand"><img className="logo" src="/icon.svg" alt="" />FacturePro</div>
       <h1>Vos factures, partagées en un QR</h1>
       <p className="muted">Créez des factures professionnelles, partagez-les par lien ou QR code et suivez leur paiement. Facturation compatible Pi Network.</p>
       <button className="btn" onClick={go} disabled={busy}>{busy ? "Connexion…" : "Se connecter avec Pi"}</button>

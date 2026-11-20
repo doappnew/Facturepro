@@ -14,7 +14,7 @@ export function PublicInvoice({ token }: { token: string }) {
   const load = () => api.get<PI>(`/api/public/invoices/${encodeURIComponent(token)}`).then(setV).catch((e) => setErr(errText(e)));
   useEffect(() => { void load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!v) return <main className="app"><div className="brand"><span className="logo">F</span>FacturePro</div>{err ? <><Err msg={err} /><p className="muted">Ce lien est invalide, expiré ou a été révoqué.</p></> : <p className="muted">Chargement…</p>}</main>;
+  if (!v) return <main className="app"><div className="brand"><img className="logo" src="/icon.svg" alt="" />FacturePro</div>{err ? <><Err msg={err} /><p className="muted">Ce lien est invalide, expiré ou a été révoqué.</p></> : <p className="muted">Chargement…</p>}</main>;
 
   const pay = async () => {
     setBusy(true); setErr("");
@@ -32,7 +32,7 @@ export function PublicInvoice({ token }: { token: string }) {
 
   return (
     <main className="app">
-      <div className="brand"><span className="logo">F</span>FacturePro</div>
+      <div className="brand"><img className="logo" src="/icon.svg" alt="" />FacturePro</div>
       <Paper d={{ ...v, clientName: v.client.name }} />
       {done && <div className="note info">Paiement reçu. Merci !</div>}
       {v.payableInPi && (

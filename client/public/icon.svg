@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4DB3F5"/>
+      <stop offset="1" stop-color="#1565B8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- feuille de facture, coin plié -->
+  <path d="M320 200H620L752 332V776Q752 824 704 824H320Q272 824 272 776V248Q272 200 320 200Z" fill="#FFFFFF"/>
+  <path d="M620 200V300Q620 332 652 332H752Z" fill="#D9ECFC"/>
+  <!-- le F : une tige et deux lignes de la facture -->
+  <rect x="344" y="288" width="48" height="448" rx="24" fill="#1B7FD6"/>
+  <rect x="344" y="288" width="224" height="48" rx="24" fill="#1B7FD6"/>
+  <rect x="344" y="432" width="168" height="48" rx="24" fill="#1B7FD6"/>
+  <!-- lignes de détail -->
+  <rect x="440" y="592" width="264" height="32" rx="16" fill="#C4DAEE"/>
+  <rect x="440" y="656" width="168" height="32" rx="16" fill="#C4DAEE"/>
+  <!-- pastille « payé » -->
+  <rect x="640" y="640" width="200" height="200" rx="60" fill="#F28C38" stroke="#1B7FD6" stroke-width="20"/>
+  <path d="M692 744L732 784L792 704" fill="none" stroke="#1F2A33" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

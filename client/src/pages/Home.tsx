@@ -21,7 +21,7 @@ export function Home({ business }: { business: Business }) {
   const name = (id: string) => clients.find((c) => c.id === id)?.name ?? "Client";
   return (
     <>
-      <div className="top"><div className="brand"><span className="logo">F</span>FacturePro</div></div>
+      <div className="top"><div className="brand"><img className="logo" src="/icon.svg" alt="" />FacturePro</div></div>
       <section className="hero"><span>Bonjour, {business.name}</span><b>{formatMinor(billed - paid, cur)}</b><span>à encaisser</span></section>
       <div className="grid2">
         <div className="stat"><b>{formatMinor(billed, cur)}</b><span>Facturé</span></div>

@@ -22,7 +22,7 @@ export function renderInvoicePdf(inv: Invoice, biz: Business, client: Client, pa
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const ink = "#1F2A33", accent = "#0E7C86";
+    const ink = "#1F2A33", accent = "#1B7FD6";
     doc.fillColor(accent).fontSize(20).text(inv.kind === "credit_note" ? "AVOIR" : "FACTURE", { continued: true })
       .fillColor(ink).fontSize(12).text(`   ${inv.number ?? "BROUILLON"}`);
     doc.moveDown(0.5).fontSize(10).fillColor(ink);
