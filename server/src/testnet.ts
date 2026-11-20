@@ -19,7 +19,11 @@ export interface PayoutClient {
 // Bibliothèque officielle pi-backend 0.1.3 : exige la clé API ET la clé du portefeuille de l'app.
 export async function createPayoutClient(apiKey: string, walletSeed: string): Promise<PayoutClient> {
   const mod = await import("pi-backend");
-  const PiNetwork = (mod as unknown as { default: new (k: string, s: string) => PayoutClient }).default;
+  // pi-backend est publié en CommonJS : selon l'import, le constructeur est sur .default ou .default.default.
+  type Ctor = new (k: string, s: string) => PayoutClient;
+  const m = mod as unknown as { default?: Ctor | { default?: Ctor } };
+  const PiNetwork = (typeof m.default === "function" ? m.default : m.default?.default) as Ctor | undefined;
+  if (typeof PiNetwork !== "function") throw new Error("pi-backend: constructeur introuvable");
   return new PiNetwork(apiKey, walletSeed);
 }
 

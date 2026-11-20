@@ -121,3 +121,14 @@ describe("réception U2A", () => {
     expect((await request(app).post("/api/testnet/receive/approve").set(h).send({ paymentId: "z" })).status).toBe(422);
   });
 });
+
+describe("createPayoutClient (vraie bibliothèque pi-backend)", () => {
+  it("construit le client sans réseau avec une clé jetable et expose les 3 méthodes", async () => {
+    const { Keypair } = await import("stellar-base");
+    const { createPayoutClient } = await import("../src/testnet.js");
+    const c = await createPayoutClient("cle-api-de-test", Keypair.random().secret());
+    expect(typeof c.createPayment).toBe("function");
+    expect(typeof c.submitPayment).toBe("function");
+    expect(typeof c.completePayment).toBe("function");
+  });
+});
