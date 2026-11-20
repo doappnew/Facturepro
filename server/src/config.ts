@@ -13,6 +13,7 @@ const schema = z.object({
   // Tests Testnet (à 0 par défaut) ; la clé du portefeuille de l'app n'est jamais journalisée et se supprime après les tests.
   TESTNET_PAYOUT: z.enum(["0", "1"]).default("0"),
   TESTNET_RECEIVE: z.enum(["0", "1"]).default("0"),
+  KEEP_ALIVE: z.enum(["0", "1"]).default("0"), // 1 = l'app se visite elle-même toutes les 10 min (Testnet, offre gratuite Render)
   PI_WALLET_SEED: z.string().trim().min(1).optional(),
   RENDER_GIT_COMMIT: z.string().optional(),
 });
