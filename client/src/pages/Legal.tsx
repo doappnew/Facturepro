@@ -1,8 +1,8 @@
 import { navigate } from "../router";
 
-// À COMPLÉTER avant la mise en production (Mainnet) : éditeur et contact. Texte à faire relire par un juriste.
-const EDITEUR = "[Nom ou raison sociale de l'éditeur]";
-const CONTACT = "[adresse e-mail de contact]";
+// Éditeur et contact renseignés. Texte à faire relire par un juriste avant le Mainnet.
+const EDITEUR = "SEDOGNIDE EULALIE ZANTCHIO";
+const CONTACT = "zantchioeulalie@gmail.com";
 const VERSION = "20 novembre 2026";
 
 export function Legal({ kind }: { kind: "confidentialite" | "conditions" }) {
@@ -93,7 +93,7 @@ function Terms() {
       <p>FacturePro est une application indépendante, non affiliée à Pi Network ni à PI Community Company. Pi Network is a trademark of PI Community Company.</p>
 
       <h3>9. Droit applicable et modifications</h3>
-      <p>Ces conditions sont régies par le droit du pays de l'éditeur ([pays à indiquer]). Nous pouvons les modifier ; la date de version est indiquée en bas de page. Continuer à utiliser le service vaut acceptation de la version en vigueur.</p>
+      <p>Ces conditions sont régies par le droit du pays de l'éditeur (Bénin). Nous pouvons les modifier ; la date de version est indiquée en bas de page. Continuer à utiliser le service vaut acceptation de la version en vigueur.</p>
     </>
   );
 }
