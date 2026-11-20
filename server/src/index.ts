@@ -20,13 +20,15 @@ app.listen(config.PORT, () => {
 
 // Garde l'instance éveillée (offre gratuite Render : veille après ~15 min sans visite). Désactivé par défaut.
 // L'offre gratuite donne ~750 h/mois pour TOUS les services du compte : on ne visite l'app que pendant la plage
-// KEEP_ALIVE_HOURS (heures du Bénin, par défaut 7-23 = 16 h/jour ≈ 490 h/mois) ; hors plage, l'instance peut dormir.
+// KEEP_ALIVE_HOURS dans le fuseau KEEP_ALIVE_TZ (ex. 9-17 à Los Angeles = 8 h/jour ≈ 245 h/mois, heure d'été comprise) ; hors plage, l'instance peut dormir.
 // Ne peut pas réveiller une instance déjà endormie : seul un service extérieur le peut.
-if (config.KEEP_ALIVE === "1" && config.PUBLIC_BASE_URL) {
+const tzOk = (() => { try { new Intl.DateTimeFormat("en-GB", { timeZone: config.KEEP_ALIVE_TZ }); return true; } catch { return false; } })();
+if (config.KEEP_ALIVE === "1" && !tzOk) console.warn("KEEP_ALIVE_TZ invalide : service d'éveil désactivé");
+if (config.KEEP_ALIVE === "1" && tzOk && config.PUBLIC_BASE_URL) {
   const url = new URL("/health", config.PUBLIC_BASE_URL).toString();
   const [from, to] = config.KEEP_ALIVE_HOURS.split("-").map(Number) as [number, number];
-  const hourInBenin = () => Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Africa/Porto-Novo" }).format(new Date())) % 24;
-  const inWindow = () => { const h = hourInBenin(); return from <= to ? h >= from && h < to : h >= from || h < to; };
+  const hourInZone = () => Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: config.KEEP_ALIVE_TZ }).format(new Date())) % 24;
+  const inWindow = () => { const h = hourInZone(); return from <= to ? h >= from && h < to : h >= from || h < to; };
   setInterval(() => { if (inWindow()) fetch(url).catch(() => undefined); }, 10 * 60 * 1000).unref();
-  console.log(`KEEP_ALIVE actif : visite de /health toutes les 10 minutes, de ${from} h à ${to} h (heure du Bénin)`);
+  console.log(`KEEP_ALIVE actif : visite de /health toutes les 10 minutes, de ${from} h à ${to} h (${config.KEEP_ALIVE_TZ})`);
 }

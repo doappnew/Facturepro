@@ -18,7 +18,8 @@ const schema = z.object({
   FEE_INVOICE_PI: z.string().regex(/^\d+(\.\d{1,7})?$/).default("0.5"),
   SUBSCRIPTION_PI: z.string().regex(/^\d+(\.\d{1,7})?$/).default("10"),
   SUBSCRIPTION_DAYS: z.coerce.number().int().min(1).max(366).default(30),
-  KEEP_ALIVE_HOURS: z.string().regex(/^\d{1,2}-\d{1,2}$/).default("7-23"), // heures locales du Bénin pendant lesquelles KEEP_ALIVE visite l'app
+  KEEP_ALIVE_HOURS: z.string().regex(/^\d{1,2}-\d{1,2}$/).default("7-23"), // heures (dans KEEP_ALIVE_TZ) pendant lesquelles KEEP_ALIVE visite l'app
+  KEEP_ALIVE_TZ: z.string().min(1).default("Africa/Porto-Novo"), // fuseau horaire (IANA) de la plage ci-dessus
   KEEP_ALIVE: z.enum(["0", "1"]).default("0"), // 1 = l'app se visite elle-même toutes les 10 min (Testnet, offre gratuite Render)
   PI_WALLET_SEED: z.string().trim().min(1).optional(),
   RENDER_GIT_COMMIT: z.string().optional(),
