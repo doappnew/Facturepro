@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, errText } from "../api";
+import { api, errText, setSession } from "../api";
 import type { Country, Currency } from "../money";
 import { Err, Field } from "../ui";
 import type { Business } from "../types";
@@ -56,6 +56,11 @@ export function BusinessPage({ business, countries, currencies, onSaved }: { bus
         <button className="btn" onClick={save} disabled={busy || !f.name.trim()}>{busy ? "Enregistrement…" : "Enregistrer"}</button>
       </section>
       <TestnetReceive />
+      <section className="card">
+        <h3>Session</h3>
+        <p className="small muted">Vous pourrez vous reconnecter avec Pi à tout moment. Vos données restent enregistrées.</p>
+        <button className="btn danger" onClick={() => { setSession(null); window.location.assign("/"); }}>Se déconnecter</button>
+      </section>
     </>
   );
 }
