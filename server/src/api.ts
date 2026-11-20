@@ -10,6 +10,7 @@ import { renderInvoicePdf } from "./pdf.js";
 import { hashToken, newShareToken, signSession, verifySession } from "./session.js";
 import type { Business, DraftInput, Invoice, Store } from "./store/types.js";
 import { paymentsRouter } from "./payments.js";
+import { billingRouter, billingState } from "./billing.js";
 import { testnetRouter, type PayoutClient } from "./testnet.js";
 
 export interface ApiDeps {
@@ -236,6 +237,15 @@ export function buildApi(deps: ApiDeps): Router {
     const d = now();
     const issue = d.toISOString().slice(0, 10);
     const due = new Date(d.getTime() + b.paymentTermsDays * 86_400_000).toISOString().slice(0, 10);
+    // Frais de service : abonnement actif OU frais de cette facture déjà réglés en Pi, sinon l'émission est refusée.
+    if (config.BILLING_ENABLED === "1") {
+      const st = await billingState(config, store, b.id, String(req.params.id), d);
+      if (!st.subscriptionActive && !st.invoiceFeePaid) {
+        res.status(402).json({ error: "Réglez les frais de service en Pi avant d'émettre cette facture", code: "payment_required",
+          invoiceFeePi: st.invoiceFeePi, subscriptionPi: st.subscriptionPi, subscriptionDays: st.subscriptionDays });
+        return;
+      }
+    }
     const inv = await store.issueInvoice(b.id, String(req.params.id), String(d.getUTCFullYear()), issue, due);
     if (!inv) { res.status(409).json({ error: "Seul un brouillon peut être émis" }); return; }
     res.json(inv);
@@ -282,6 +292,7 @@ export function buildApi(deps: ApiDeps): Router {
 
   // --- Paiement Pi (U2A) : session Pi du payeur requise ---
   r.use("/payments", auth, paymentsRouter({ config, store, platform: deps.platform }));
+  r.use("/billing", auth, billingRouter({ config, store, platform: deps.platform, now }));
   // Tests Testnet : routes absentes en Mainnet.
   if (config.PI_NETWORK === "testnet") {
     r.use("/testnet", auth, testnetRouter({ config, store, platform: deps.platform, payoutFactory: deps.payoutFactory }));

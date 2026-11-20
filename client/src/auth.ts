@@ -8,5 +8,7 @@ export async function loginWithPi(scopes: string[] = ["username", "payments"]): 
   const r = await api.post<{ session: string }>("/api/auth/pi", { accessToken: auth.accessToken });
   setSession(r.session);
   // Paiements incomplets : le serveur relit leur état chez Pi, il ne croit pas le navigateur.
-  for (const id of pending) await api.post("/api/payments/incomplete", { paymentId: id }).catch(() => undefined);
+  for (const id of pending) {
+    await api.post("/api/payments/incomplete", { paymentId: id }).catch(() => api.post("/api/billing/incomplete", { paymentId: id })).catch(() => undefined);
+  }
 }

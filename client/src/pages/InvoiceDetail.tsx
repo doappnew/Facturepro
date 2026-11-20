@@ -3,6 +3,7 @@ import { api, errText } from "../api";
 import { navigate } from "../router";
 import { Err, Paper } from "../ui";
 import type { Business, Client, Invoice } from "../types";
+import { ServiceFeeBox, useBilling } from "./Billing";
 
 export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -18,6 +19,7 @@ export function InvoiceDetail({ id, business }: { id: string; business: Business
   const [share, setShare] = useState<{ url: string; qrDataUrl: string } | null>(null);
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [toast, setToast] = useState("");
 
+  const { st: billing, reload: reloadBilling } = useBilling(id);
   const load = useCallback(async () => {
     try {
       const i = await api.get<Invoice>(`/api/invoices/${id}`);
@@ -41,7 +43,9 @@ export function InvoiceDetail({ id, business }: { id: string; business: Business
       {inv.status === "draft" && (
         <>
           <div className="note info">Brouillon : relisez l'aperçu ci-dessus. L'émission attribue le numéro définitif et fige les lignes.</div>
-          <button className="btn" disabled={busy} onClick={() => act(async () => { await api.post(`/api/invoices/${id}/issue`); })}>Émettre la facture</button>
+          {billing?.enabled && !billing.subscriptionActive && !billing.invoiceFeePaid
+            ? <ServiceFeeBox invoiceId={id} st={billing} onPaid={async () => { await load(); await reloadBilling(); }} />
+            : <button className="btn" disabled={busy} onClick={() => act(async () => { await api.post(`/api/invoices/${id}/issue`); })}>Émettre la facture</button>}
         </>
       )}
 

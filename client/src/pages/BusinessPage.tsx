@@ -3,6 +3,7 @@ import { api, errText, setSession } from "../api";
 import type { Country, Currency } from "../money";
 import { Err, Field } from "../ui";
 import type { Business } from "../types";
+import { SubscriptionCard } from "./Billing";
 import { TestnetReceive } from "./Testnet";
 
 export function BusinessPage({ business, countries, currencies, onSaved }: { business: Business | null; countries: Country[]; currencies: Currency[]; onSaved: () => void }) {
@@ -55,6 +56,7 @@ export function BusinessPage({ business, countries, currencies, onSaved }: { bus
         {ok && <div className="note info">Profil enregistré.</div>}
         <button className="btn" onClick={save} disabled={busy || !f.name.trim()}>{busy ? "Enregistrement…" : "Enregistrer"}</button>
       </section>
+      <SubscriptionCard />
       <TestnetReceive />
       <section className="card">
         <h3>Session</h3>

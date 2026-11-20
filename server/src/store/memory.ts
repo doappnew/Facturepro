@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { parseDecimal } from "../calc.js";
 import type {
-  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ShareLink, Store, StoredLine, TestnetKind, TestnetTest, User,
+  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ServicePayment, ShareLink, Store, StoredLine, TestnetKind, TestnetTest, User,
 } from "./types.js";
 
 function toLines(input: DraftInput): StoredLine[] {
@@ -126,6 +126,36 @@ export class MemoryStore implements Store {
     return [...this.payments.values()]
       .filter((p) => p.invoiceId === invoiceId && p.status === "completed")
       .reduce((a, p) => a + parseDecimal(p.amountPi, 7), 0);
+  }
+
+  servicePayments = new Map<string, ServicePayment>();
+  subscriptions = new Map<string, string>();
+  async insertServicePayment(p: Omit<ServicePayment, "id">) {
+    if (this.servicePayments.has(p.piPaymentId)) throw new Error("paiement déjà enregistré");
+    const row: ServicePayment = { ...p, id: randomUUID() };
+    this.servicePayments.set(p.piPaymentId, row);
+    return row;
+  }
+  async getServicePayment(id: string) { return this.servicePayments.get(id) ?? null; }
+  async updateServicePayment(id: string, patch: Partial<Pick<ServicePayment, "status">>) {
+    const p = this.servicePayments.get(id); if (p) Object.assign(p, patch);
+  }
+  async completeServicePayment(id: string, txid: string) {
+    const p = this.servicePayments.get(id);
+    if (!p || p.status === "completed") return null;
+    p.status = "completed"; p.txid = txid;
+    return p;
+  }
+  async hasCompletedInvoiceFee(invoiceId: string) {
+    return [...this.servicePayments.values()].some((p) => p.kind === "invoice_fee" && p.invoiceId === invoiceId && p.status === "completed");
+  }
+  async getSubscriptionUntil(businessId: string) { return this.subscriptions.get(businessId) ?? null; }
+  async extendSubscription(businessId: string, days: number, nowIso: string) {
+    const cur = this.subscriptions.get(businessId);
+    const base = cur && cur > nowIso ? new Date(cur) : new Date(nowIso);
+    const until = new Date(base.getTime() + days * 86_400_000).toISOString();
+    this.subscriptions.set(businessId, until);
+    return until;
   }
 
   testnet = new Map<string, TestnetTest>();

@@ -13,6 +13,12 @@ const schema = z.object({
   // Tests Testnet (à 0 par défaut) ; la clé du portefeuille de l'app n'est jamais journalisée et se supprime après les tests.
   TESTNET_PAYOUT: z.enum(["0", "1"]).default("0"),
   TESTNET_RECEIVE: z.enum(["0", "1"]).default("0"),
+  // Frais de service payés en Pi par l'entreprise qui facture (0 = désactivé). Prix modifiables dans Render, sans toucher au code.
+  BILLING_ENABLED: z.enum(["0", "1"]).default("0"),
+  FEE_INVOICE_PI: z.string().regex(/^\d+(\.\d{1,7})?$/).default("0.5"),
+  SUBSCRIPTION_PI: z.string().regex(/^\d+(\.\d{1,7})?$/).default("10"),
+  SUBSCRIPTION_DAYS: z.coerce.number().int().min(1).max(366).default(30),
+  KEEP_ALIVE_HOURS: z.string().regex(/^\d{1,2}-\d{1,2}$/).default("7-23"), // heures locales du Bénin pendant lesquelles KEEP_ALIVE visite l'app
   KEEP_ALIVE: z.enum(["0", "1"]).default("0"), // 1 = l'app se visite elle-même toutes les 10 min (Testnet, offre gratuite Render)
   PI_WALLET_SEED: z.string().trim().min(1).optional(),
   RENDER_GIT_COMMIT: z.string().optional(),

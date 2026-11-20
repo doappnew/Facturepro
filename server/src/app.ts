@@ -10,7 +10,7 @@ import { CURRENCIES, getCurrency } from "./currencies.js";
 import { createPiPlatform, verifyAccessToken, type PiPlatform, type PiUser } from "./pi/client.js";
 import type { Store } from "./store/types.js";
 
-export const APP_VERSION = "0.5.1";
+export const APP_VERSION = "0.6.0";
 
 export interface Deps {
   config: Config;
@@ -18,10 +18,11 @@ export interface Deps {
   verifyToken?: (accessToken: string) => Promise<PiUser>;
   platform?: PiPlatform;
   payoutFactory?: () => Promise<import("./testnet.js").PayoutClient>;
+  now?: () => Date;
   clientDir?: string;
 }
 
-export function createApp({ config, store, verifyToken = (t) => verifyAccessToken(t), platform, payoutFactory, clientDir }: Deps): Express {
+export function createApp({ config, store, verifyToken = (t) => verifyAccessToken(t), platform, payoutFactory, now, clientDir }: Deps): Express {
   platform ??= config.PI_API_KEY ? createPiPlatform(config.PI_API_KEY) : undefined;
   const app = express();
   app.disable("x-powered-by");
@@ -70,7 +71,7 @@ export function createApp({ config, store, verifyToken = (t) => verifyAccessToke
     res.json({ countries: COUNTRIES, currencies: [...CURRENCIES, getCurrency("PI")] });
   });
 
-  if (store) app.use("/api", buildApi({ config, store, verifyToken, platform, payoutFactory }));
+  if (store) app.use("/api", buildApi({ config, store, verifyToken, platform, payoutFactory, now }));
   else app.use("/api", (_req, res) => { res.status(503).json({ error: "Base de données non configurée" }); });
 
   // Interface React compilée (si présente) + repli SPA : /i/:token, /factures, etc.

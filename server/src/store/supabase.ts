@@ -2,7 +2,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { parseDecimal } from "../calc.js";
 import type {
-  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ShareLink, Store, StoredLine, TestnetKind, TestnetTest, User,
+  Business, BusinessInput, Client, ClientInput, DraftInput, Invoice, InvoiceStatus, PiPayment, ServicePayment, ShareLink, Store, StoredLine, TestnetKind, TestnetTest, User,
 } from "./types.js";
 
 type Row = Record<string, any>;
@@ -13,6 +13,10 @@ function fail(op: string, error: { message: string; code?: string } | null): nev
   throw new Error(`Erreur base de données (${op})`);
 }
 
+const toServicePayment = (r: Row): ServicePayment => ({
+  id: r.id, piPaymentId: r.pi_payment_id, kind: r.kind, businessId: r.business_id, invoiceId: r.invoice_id, network: r.network,
+  amountPi: r.amount_pi, payerPiUid: r.payer_pi_uid, status: r.status, txid: r.txid,
+});
 const toUser = (r: Row): User => ({ id: r.id, piUid: r.pi_uid, piUsername: r.pi_username });
 const toBusiness = (r: Row): Business => ({
   id: r.id, ownerId: r.owner_id, name: r.name, countryCode: r.country_code, defaultCurrency: r.default_currency, mode: r.mode,
@@ -223,6 +227,50 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.db.from("pi_payments").select("amount_pi").eq("invoice_id", invoiceId).eq("status", "completed");
     if (error) fail("sumCompletedPiMinor", error);
     return (data ?? []).reduce((a, r) => a + parseDecimal(amt(r.amount_pi), 7), 0);
+  }
+
+  async insertServicePayment(p: Omit<ServicePayment, "id">) {
+    const { data, error } = await this.db.from("service_payments").insert({
+      pi_payment_id: p.piPaymentId, kind: p.kind, business_id: p.businessId, invoice_id: p.invoiceId, network: p.network,
+      amount_pi: p.amountPi, payer_pi_uid: p.payerPiUid, status: p.status, txid: p.txid,
+    }).select().single();
+    if (error) fail("insertServicePayment", error);
+    return toServicePayment(data);
+  }
+  async getServicePayment(piPaymentId: string) {
+    const { data, error } = await this.db.from("service_payments").select().eq("pi_payment_id", piPaymentId).maybeSingle();
+    if (error) fail("getServicePayment", error);
+    return data ? toServicePayment(data) : null;
+  }
+  async updateServicePayment(piPaymentId: string, patch: Partial<Pick<ServicePayment, "status">>) {
+    const { error } = await this.db.from("service_payments").update(patch).eq("pi_payment_id", piPaymentId);
+    if (error) fail("updateServicePayment", error);
+  }
+  async completeServicePayment(piPaymentId: string, txid: string) {
+    const { data, error } = await this.db.from("service_payments")
+      .update({ status: "completed", txid, completed_at: new Date().toISOString() })
+      .eq("pi_payment_id", piPaymentId).neq("status", "completed").select();
+    if (error) fail("completeServicePayment", error);
+    return data && data.length > 0 ? toServicePayment(data[0]!) : null;
+  }
+  async hasCompletedInvoiceFee(invoiceId: string) {
+    const { count, error } = await this.db.from("service_payments").select("*", { count: "exact", head: true })
+      .eq("kind", "invoice_fee").eq("invoice_id", invoiceId).eq("status", "completed");
+    if (error) fail("hasCompletedInvoiceFee", error);
+    return (count ?? 0) > 0;
+  }
+  async getSubscriptionUntil(businessId: string) {
+    const { data, error } = await this.db.from("service_subscriptions").select("active_until").eq("business_id", businessId).maybeSingle();
+    if (error) fail("getSubscriptionUntil", error);
+    return data ? String(data.active_until) : null;
+  }
+  async extendSubscription(businessId: string, days: number, nowIso: string) {
+    const cur = await this.getSubscriptionUntil(businessId);
+    const base = cur && new Date(cur).getTime() > new Date(nowIso).getTime() ? new Date(cur) : new Date(nowIso);
+    const until = new Date(base.getTime() + days * 86_400_000).toISOString();
+    const { error } = await this.db.from("service_subscriptions").upsert({ business_id: businessId, active_until: until });
+    if (error) fail("extendSubscription", error);
+    return until;
   }
 
   async claimTestnet(piUid: string, kind: TestnetKind) {

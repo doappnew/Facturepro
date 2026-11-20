@@ -92,6 +92,20 @@ export interface PiPayment {
   txid: string | null;
 }
 
+export type ServiceKind = "invoice_fee" | "subscription";
+export interface ServicePayment {
+  id: string;
+  piPaymentId: string;
+  kind: ServiceKind;
+  businessId: string;
+  invoiceId: string | null;
+  network: "Pi Network" | "Pi Testnet";
+  amountPi: string;
+  payerPiUid: string;
+  status: "created" | "approved" | "completed" | "cancelled" | "failed";
+  txid: string | null;
+}
+
 export type TestnetKind = "payout" | "receive";
 export interface TestnetTest { piUid: string; kind: TestnetKind; paymentId: string | null; txid: string | null; status: "started" | "done" | "failed" }
 
@@ -125,6 +139,16 @@ export interface Store {
   getPiPayment(piPaymentId: string): Promise<PiPayment | null>;
   updatePiPayment(piPaymentId: string, patch: Partial<Pick<PiPayment, "status" | "txid">>): Promise<PiPayment | null>;
   sumCompletedPiMinor(invoiceId: string): Promise<number>;
+
+  // Frais de service (payés en Pi par l'entreprise qui facture).
+  insertServicePayment(p: Omit<ServicePayment, "id">): Promise<ServicePayment>;
+  getServicePayment(piPaymentId: string): Promise<ServicePayment | null>;
+  updateServicePayment(piPaymentId: string, patch: Partial<Pick<ServicePayment, "status">>): Promise<void>;
+  /** Passe le paiement à « completed » une seule fois : renvoie la ligne si la transition a eu lieu, sinon null. */
+  completeServicePayment(piPaymentId: string, txid: string): Promise<ServicePayment | null>;
+  hasCompletedInvoiceFee(invoiceId: string): Promise<boolean>;
+  getSubscriptionUntil(businessId: string): Promise<string | null>;
+  extendSubscription(businessId: string, days: number, nowIso: string): Promise<string>;
 
   // Tests Testnet exigés par la core team : une seule fois par compte et par type.
   claimTestnet(piUid: string, kind: TestnetKind): Promise<boolean>; // false si déjà tenté

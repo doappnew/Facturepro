@@ -77,22 +77,25 @@ function Terms() {
       <p>Les paiements en Pi sont traités via la plateforme Pi. Une facture n'est marquée payée qu'après confirmation du paiement par Pi. FacturePro n'est pas une banque, ne détient pas de fonds et n'intervient pas dans les litiges entre vendeur et client. Les transactions sur la blockchain sont irréversibles ; sur le réseau de test (Pi Testnet), les Pi n'ont aucune valeur.</p>
       <p>Un avoir est un document comptable : il ne déclenche aucun remboursement automatique.</p>
 
-      <h3>4. Partage</h3>
+      <h3>4. Frais de service</h3>
+      <p>L'émission d'une facture est un service payant, réglé en Pi : soit des frais par facture, soit un abonnement à durée limitée qui permet d'émettre sans frais supplémentaires pendant sa durée. Le tarif en vigueur est affiché dans l'application avant tout paiement ; vous confirmez chaque paiement dans Pi. Les frais réglés ne sont pas remboursables une fois la facture émise, sauf erreur de notre part. Un brouillon peut être créé et modifié sans frais, mais il n'a ni numéro définitif, ni lien de partage.</p>
+
+      <h3>5. Partage</h3>
       <p>Toute personne qui possède le lien ou le QR code d'une facture peut la consulter. Vous choisissez à qui vous le transmettez et pouvez le révoquer à tout moment.</p>
 
-      <h3>5. Disponibilité et responsabilité</h3>
+      <h3>6. Disponibilité et responsabilité</h3>
       <p>Nous faisons de notre mieux pour que le service fonctionne, mais des interruptions sont possibles. Dans la mesure permise par la loi, FacturePro n'est pas responsable des pertes indirectes, d'un manque à gagner ou d'une perte de données résultant de l'utilisation du service. Conservez une copie PDF de vos factures importantes.</p>
 
-      <h3>6. Suspension et fin</h3>
+      <h3>7. Suspension et fin</h3>
       <p>Vous pouvez cesser d'utiliser FacturePro à tout moment et demander la suppression de vos données (voir la politique de confidentialité). Nous pouvons suspendre un accès en cas d'abus ou d'usage contraire à ces conditions.</p>
 
-      <h3>7. Propriété intellectuelle</h3>
+      <h3>8. Propriété intellectuelle</h3>
       <p>Le nom FacturePro, son logo et le code de l'application appartiennent à leur éditeur. Vos données et le contenu de vos factures vous appartiennent.</p>
 
-      <h3>8. Indépendance vis-à-vis de Pi Network</h3>
+      <h3>9. Indépendance vis-à-vis de Pi Network</h3>
       <p>FacturePro est une application indépendante, non affiliée à Pi Network ni à PI Community Company. Pi Network is a trademark of PI Community Company.</p>
 
-      <h3>9. Droit applicable et modifications</h3>
+      <h3>10. Droit applicable et modifications</h3>
       <p>Ces conditions sont régies par le droit du pays de l'éditeur (Bénin). Nous pouvons les modifier ; la date de version est indiquée en bas de page. Continuer à utiliser le service vaut acceptation de la version en vigueur.</p>
     </>
   );

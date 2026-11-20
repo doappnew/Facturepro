@@ -19,10 +19,14 @@ app.listen(config.PORT, () => {
 });
 
 // Garde l'instance éveillée (offre gratuite Render : veille après ~15 min sans visite). Désactivé par défaut.
-// Attention : l'offre gratuite offre ~750 h/mois pour TOUS les services du compte ; à couper après les tests.
+// L'offre gratuite donne ~750 h/mois pour TOUS les services du compte : on ne visite l'app que pendant la plage
+// KEEP_ALIVE_HOURS (heures du Bénin, par défaut 7-23 = 16 h/jour ≈ 490 h/mois) ; hors plage, l'instance peut dormir.
 // Ne peut pas réveiller une instance déjà endormie : seul un service extérieur le peut.
 if (config.KEEP_ALIVE === "1" && config.PUBLIC_BASE_URL) {
   const url = new URL("/health", config.PUBLIC_BASE_URL).toString();
-  setInterval(() => { fetch(url).catch(() => undefined); }, 10 * 60 * 1000).unref();
-  console.log("KEEP_ALIVE actif : visite de /health toutes les 10 minutes");
+  const [from, to] = config.KEEP_ALIVE_HOURS.split("-").map(Number) as [number, number];
+  const hourInBenin = () => Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Africa/Porto-Novo" }).format(new Date())) % 24;
+  const inWindow = () => { const h = hourInBenin(); return from <= to ? h >= from && h < to : h >= from || h < to; };
+  setInterval(() => { if (inWindow()) fetch(url).catch(() => undefined); }, 10 * 60 * 1000).unref();
+  console.log(`KEEP_ALIVE actif : visite de /health toutes les 10 minutes, de ${from} h à ${to} h (heure du Bénin)`);
 }
