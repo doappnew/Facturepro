@@ -15,7 +15,7 @@ export function Home({ business }: { business: Business }) {
   }, []);
   const cur = business.defaultCurrency;
   const mine = inv.filter((i) => i.currency === cur && i.kind === "invoice");
-  const active = mine.filter((i) => i.status !== "draft" && i.status !== "cancelled");
+  const active = mine.filter((i) => i.status !== "draft" && i.status !== "cancelled" && i.status !== "credit_issued");
   const billed = active.reduce((a, i) => a + i.totalMinor, 0);
   const paid = active.filter((i) => i.status === "paid").reduce((a, i) => a + i.totalMinor, 0);
   const name = (id: string) => clients.find((c) => c.id === id)?.name ?? "Client";

@@ -71,6 +71,7 @@ export interface DraftInput {
   note: string | null;
   lines: LineInput[];
   totals: InvoiceTotals;
+  creditOf?: string; // identifiant de la facture d'origine : crée un avoir
 }
 
 export interface ShareLink {

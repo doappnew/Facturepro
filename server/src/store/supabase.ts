@@ -131,6 +131,7 @@ export class SupabaseStore implements Store {
   async createDraft(businessId: string, input: DraftInput) {
     const { data, error } = await this.db.from("invoices").insert({
       business_id: businessId, client_id: input.clientId, currency_code: input.currency, tax_mode: input.taxMode, note: input.note,
+      kind: input.creditOf ? "credit_note" : "invoice", original_invoice_id: input.creditOf ?? null,
       subtotal_minor: input.totals.subtotalMinor, tax_total_minor: input.totals.taxTotalMinor, total_minor: input.totals.totalMinor,
     }).select().single();
     if (error) fail("createDraft", error);

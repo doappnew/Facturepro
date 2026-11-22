@@ -106,3 +106,41 @@ describe("frais de service (Pi)", () => {
     expect([st.invoiceFeePi, st.subscriptionPi, st.subscriptionDays]).toEqual(["1.25", "7", 10]);
   });
 });
+
+describe("avoirs", () => {
+  async function issued() {
+    const s = setup({ BILLING_ENABLED: "0" });
+    const h = await s.login("vendeur");
+    await request(s.app).put("/api/business").set(h).send({ name: "Atelier", countryCode: "BJ", defaultCurrency: "PI", mode: "pi_only", paymentTermsDays: 14 }).expect(200);
+    const client = (await request(s.app).post("/api/clients").set(h).send({ name: "Client" })).body;
+    const id = (await request(s.app).post("/api/invoices").set(h).send({ clientId: client.id, currency: "PI", taxMode: "exclusive",
+      lines: [{ description: "Service", quantity: "2", unitPrice: "5", taxRateBps: 0 }] }).expect(201)).body.id as string;
+    await request(s.app).post(`/api/invoices/${id}/issue`).set(h).expect(200);
+    return { ...s, h, id, client };
+  }
+  it("crée un avoir numéroté AV-AAAA-00001, de même montant, et passe la facture à « avoir émis »", async () => {
+    const { app, h, id } = await issued();
+    const r = await request(app).post(`/api/invoices/${id}/credit-note`).set(h).expect(201);
+    expect(r.body.kind).toBe("credit_note");
+    expect(r.body.number).toMatch(/^AV-\d{4}-00001$/);
+    expect(r.body.totalMinor).toBe(100_000_000);
+    expect(r.body.originalInvoiceId).toBe(id);
+    expect((await request(app).get(`/api/invoices/${id}`).set(h)).body.status).toBe("credit_issued");
+  });
+  it("un seul avoir par facture, et une facture créditée n'est plus payable en Pi", async () => {
+    const { app, h, id, dtos } = await issued();
+    await request(app).post(`/api/invoices/${id}/credit-note`).set(h).expect(201);
+    expect((await request(app).post(`/api/invoices/${id}/credit-note`).set(h)).status).toBe(409);
+    const payer = { Authorization: h.Authorization };
+    dtos.set("p", { identifier: "p", user_uid: "uid-vendeur", amount: 10, memo: "x", metadata: { invoiceId: id }, direction: "user_to_app", network: "Pi Testnet",
+      status: { developer_approved: false, transaction_verified: false, developer_completed: false, cancelled: false, user_cancelled: false }, transaction: null });
+    expect((await request(app).post("/api/payments/approve").set(payer).send({ paymentId: "p" })).status).toBe(422);
+  });
+  it("refuse l'avoir sur un brouillon, sur un avoir et sur une facture déjà payée", async () => {
+    const { app, h, id, store } = await issued();
+    const credit = (await request(app).post(`/api/invoices/${id}/credit-note`).set(h).expect(201)).body.id as string;
+    expect((await request(app).post(`/api/invoices/${credit}/credit-note`).set(h)).status).toBe(409);
+    await store.insertPiPayment({ invoiceId: id, piPaymentId: "z", network: "Pi Testnet", amountPi: "1.0000000", payerPiUid: "u", status: "completed", txid: "t" });
+    expect((await request(app).post(`/api/invoices/${id}/credit-note`).set(h)).status).toBe(409);
+  });
+});

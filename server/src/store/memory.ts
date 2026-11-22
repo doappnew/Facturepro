@@ -52,7 +52,7 @@ export class MemoryStore implements Store {
 
   async createDraft(businessId: string, input: DraftInput) {
     const inv: Invoice = {
-      id: randomUUID(), businessId, clientId: input.clientId, kind: "invoice", originalInvoiceId: null, number: null,
+      id: randomUUID(), businessId, clientId: input.clientId, kind: input.creditOf ? "credit_note" : "invoice", originalInvoiceId: input.creditOf ?? null, number: null,
       status: "draft", currency: input.currency, taxMode: input.taxMode, issueDate: null, dueDate: null,
       subtotalMinor: input.totals.subtotalMinor, taxTotalMinor: input.totals.taxTotalMinor, totalMinor: input.totals.totalMinor,
       note: input.note, lines: toLines(input),

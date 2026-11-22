@@ -8,7 +8,7 @@ import { CURRENCIES, getCurrency } from "./currencies.js";
 import { PiApiError, type PiPlatform, type PiUser } from "./pi/client.js";
 import { renderInvoicePdf } from "./pdf.js";
 import { hashToken, newShareToken, signSession, verifySession } from "./session.js";
-import type { Business, DraftInput, Invoice, Store } from "./store/types.js";
+import type { Business, DraftInput, Invoice, InvoiceStatus, Store } from "./store/types.js";
 import { paymentsRouter } from "./payments.js";
 import { billingRouter, billingState } from "./billing.js";
 import { testnetRouter, type PayoutClient } from "./testnet.js";
@@ -249,6 +249,33 @@ export function buildApi(deps: ApiDeps): Router {
     const inv = await store.issueInvoice(b.id, String(req.params.id), String(d.getUTCFullYear()), issue, due);
     if (!inv) { res.status(409).json({ error: "Seul un brouillon peut être émis" }); return; }
     res.json(inv);
+  }));
+  // Avoir : document officiel qui annule une facture émise et non payée (numéro propre « AV-AAAA-00001 »).
+  // Une facture déjà payée (même en partie) n'est pas créditée ici : cela suppose un remboursement, hors périmètre.
+  r.post("/invoices/:id/credit-note", auth, wrap(async (req, res) => {
+    const b = await needBusiness(res); if (!b) return;
+    const id = String(req.params.id);
+    const inv = await store.getInvoice(b.id, id);
+    if (!inv) { res.status(404).json({ error: "Facture introuvable" }); return; }
+    if (inv.kind !== "invoice") { res.status(409).json({ error: "On ne crédite qu'une facture" }); return; }
+    if ((await store.sumCompletedPiMinor(id)) > 0) { res.status(409).json({ error: "Cette facture a déjà reçu un paiement : un avoir exigerait un remboursement" }); return; }
+    const UNPAID: InvoiceStatus[] = ["issued", "sent", "pending_payment", "overdue"];
+    // On verrouille d'abord la facture d'origine (transition atomique) : deux avoirs simultanés sont impossibles.
+    const locked = await store.setInvoiceStatus(b.id, id, UNPAID, "credit_issued");
+    if (!locked) { res.status(409).json({ error: "Seule une facture émise et non payée peut recevoir un avoir" }); return; }
+    try {
+      const d = now();
+      const draft: DraftInput = { clientId: inv.clientId, currency: inv.currency, taxMode: inv.taxMode, lines: inv.lines,
+        note: `Avoir pour la facture ${inv.number ?? ""}`.trim(), totals: computeInvoice(inv.currency, inv.taxMode, inv.lines), creditOf: inv.id };
+      const created = await store.createDraft(b.id, draft);
+      const issued = await store.issueInvoice(b.id, created.id, `AV-${d.getUTCFullYear()}`, d.toISOString().slice(0, 10), d.toISOString().slice(0, 10));
+      if (!issued) throw new Error("émission de l'avoir impossible");
+      await store.revokeShareLinks(id); // la facture annulée ne reste pas consultable par un ancien lien
+      res.status(201).json(issued);
+    } catch (e) {
+      await store.setInvoiceStatus(b.id, id, ["credit_issued"], inv.status); // on remet la facture dans son état
+      throw e;
+    }
   }));
   r.post("/invoices/:id/cancel", auth, wrap(async (req, res) => {
     const b = await needBusiness(res); if (!b) return;

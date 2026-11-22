@@ -17,6 +17,7 @@ export function InvoiceDetail({ id, business }: { id: string; business: Business
   const [inv, setInv] = useState<Invoice | null>(null);
   const [client, setClient] = useState<Client | null>(null);
   const [share, setShare] = useState<{ url: string; qrDataUrl: string } | null>(null);
+  const [confirmCredit, setConfirmCredit] = useState(false);
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [toast, setToast] = useState("");
 
   const { st: billing, reload: reloadBilling } = useBilling(id);
@@ -68,6 +69,15 @@ export function InvoiceDetail({ id, business }: { id: string; business: Business
       <button className="btn sec" disabled={busy} onClick={() => act(async () => { downloadBlob(await api.blob(`/api/invoices/${id}/pdf`), `facture-${inv.number ?? "brouillon"}.pdf`); })}>Télécharger le PDF</button>
       <p className="small muted">Le téléchargement peut être limité dans Pi Browser : si rien ne se passe, ouvrez le lien de partage dans un autre navigateur.</p>
 
+      {inv.kind === "invoice" && ["issued", "sent", "pending_payment", "overdue"].includes(inv.status) && inv.paidMinor === 0 && (
+        confirmCredit
+          ? <section className="card">
+              <p className="small">Un avoir annule cette facture par un document officiel numéroté. Elle ne pourra plus être payée. Cette action est définitive.</p>
+              <button className="btn danger" disabled={busy} onClick={() => act(async () => { const c = await api.post<{ id: string }>(`/api/invoices/${id}/credit-note`); setConfirmCredit(false); navigate(`/factures/${c.id}`); })}>Confirmer l'avoir</button>
+              <button className="btn sec" disabled={busy} onClick={() => setConfirmCredit(false)}>Ne pas émettre d'avoir</button>
+            </section>
+          : <button className="btn sec" disabled={busy} onClick={() => setConfirmCredit(true)}>Émettre un avoir</button>
+      )}
       {["draft", "issued", "sent", "pending_payment", "overdue"].includes(inv.status) && inv.paidMinor === 0 && (
         <button className="btn danger" disabled={busy} onClick={() => act(async () => { await api.post(`/api/invoices/${id}/cancel`); setShare(null); })}>Annuler la facture</button>
       )}
